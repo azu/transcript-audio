@@ -227,6 +227,10 @@ export function AudioPlayer() {
             recognition.continuous = true;
             recognition.lang = "ja";
             recognition.onresult = function (event) {
+                if (event.target !== recognition) {
+                    console.log("Work another reconition");
+                    return;
+                }
                 const currentTime = audioElement?.currentTime ?? 0;
                 const speechRecognitionResults = Array.from(event.results);
                 const text = speechRecognitionResults
