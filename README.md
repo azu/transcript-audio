@@ -17,6 +17,9 @@ Transcript your audio file like Podcast using [SpeechRecognition](https://develo
 3. Drag and Drop your audio file you want to transcript to following
 4. Play audio and want for transcription.
 
+:memo: Input/Output device should be [BlackHole](https://github.com/ExistentialAudio/BlackHole) during transcription.
+If Input/Output device is empty, you need to reload the page.
+
 ## Contributing
 
 1. Fork it!
