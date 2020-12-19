@@ -257,7 +257,6 @@ export function AudioPlayer() {
             recognition.onend = function (_event) {
                 console.log("onend");
                 if (playing) {
-                    stopRecognition();
                     startRecognition();
                 }
             };
