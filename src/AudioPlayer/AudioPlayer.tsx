@@ -236,6 +236,10 @@ export function AudioPlayer() {
                     currentTime
                 });
                 const liveTranscriptResult = liveTranscript.get();
+                const formattedTime = toHHMMSS(currentTime);
+                console.groupCollapsed(formattedTime);
+                console.log(liveTranscriptResult);
+                console.groupEnd();
                 const processingText = liveTranscriptResult.items.map((t, index) => {
                     return (
                         <span key={t.startIndex + t.endIndex} style={{ backgroundColor: selectColor(index) }}>
@@ -245,7 +249,7 @@ export function AudioPlayer() {
                 });
                 setSpeechingText(<>{processingText}</>);
                 if (finalResult) {
-                    addLog(`${toHHMMSS(currentTime)}${liveTranscriptResult.text}`);
+                    addLog(`${formattedTime}${liveTranscriptResult.text}`);
                 }
             };
             recognition.onend = function (_event) {

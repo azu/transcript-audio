@@ -17,11 +17,11 @@ export type createLiveTranscriptResult = {
     items: createLiveTranscriptResultItem[];
 };
 export const createLiveTranscript = () => {
-    const rawTranscript: LiveTranscript[] = [];
-    const internalTranscript: IRTranscript[] = [];
+    const rawTranscripts: LiveTranscript[] = [];
+    const internalTranscripts: IRTranscript[] = [];
     return {
         valid(transcript: LiveTranscript) {
-            const lastTranscript = rawTranscript[rawTranscript.length - 1];
+            const lastTranscript = rawTranscripts[rawTranscripts.length - 1];
             if (!lastTranscript) {
                 return true;
             }
@@ -35,10 +35,10 @@ export const createLiveTranscript = () => {
             if (!this.valid(transcript)) {
                 return;
             }
-            rawTranscript.push(transcript);
-            const lastIR = internalTranscript[internalTranscript.length - 1];
+            rawTranscripts.push(transcript);
+            const lastIR = internalTranscripts[internalTranscripts.length - 1];
             if (lastIR) {
-                internalTranscript.push({
+                internalTranscripts.push({
                     startIndex: lastIR.endIndex,
                     endIndex: transcript.text.length,
                     startTime: lastIR.endTime + 1,
@@ -46,7 +46,7 @@ export const createLiveTranscript = () => {
                 });
             } else {
                 // first IR
-                internalTranscript.push({
+                internalTranscripts.push({
                     startIndex: 0,
                     endIndex: transcript.text.length,
                     startTime: 0,
@@ -55,7 +55,7 @@ export const createLiveTranscript = () => {
             }
         },
         get(): createLiveTranscriptResult {
-            const lastTranscript = rawTranscript[rawTranscript.length - 1];
+            const lastTranscript = rawTranscripts[rawTranscripts.length - 1];
             if (!lastTranscript) {
                 return {
                     text: "",
@@ -64,7 +64,7 @@ export const createLiveTranscript = () => {
             }
             return {
                 text: lastTranscript.text,
-                items: internalTranscript.map((ir) => {
+                items: internalTranscripts.map((ir) => {
                     return {
                         ...ir,
                         text: lastTranscript.text.slice(ir.startIndex, ir.endIndex)
