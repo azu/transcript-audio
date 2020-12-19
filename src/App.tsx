@@ -18,7 +18,7 @@ function App() {
                             You need to install <a href="https://github.com/ExistentialAudio/BlackHole">BlackHole</a> on
                             your PC
                         </li>
-                        <li>Click "Play" audio button ▶ at first and Confirm "OK" for use your mike🎤</li>
+                        <li>Click "Play" audio button ▶ at first and Confirm "OK" for use your mike 🎤</li>
                         <li>**Reload** the page</li>
                     </ul>
                     <h2>How to get transcript?</h2>
