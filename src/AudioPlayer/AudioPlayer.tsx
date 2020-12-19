@@ -5,9 +5,6 @@ import { createLiveTranscript, createLiveTranscriptResult } from "../AudioTransc
 import { toHHMMSS } from "./format-time";
 import { useDropzone } from "react-dropzone";
 
-(window as any).kuromojin = {
-    dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict"
-};
 const setLoopbackAudioDevice = async (device: MediaDeviceInfo) => {
     const loopbackAudioDeviceId = device.deviceId;
     const constraints = {
