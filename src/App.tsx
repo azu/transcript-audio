@@ -8,7 +8,10 @@ function App() {
             <header className={"App-Header"}>
                 <h1>🔈📝 Transcript Audio</h1>
                 <details>
-                    <summary>Usage</summary>
+                    <summary>
+                        Usage: ⚠️ Need <a href="https://github.com/ExistentialAudio/BlackHole">BlackHole</a> before
+                        playing
+                    </summary>
                     <ol>
                         <li>
                             You need to install <a href="https://github.com/ExistentialAudio/BlackHole">BlackHole</a> on
