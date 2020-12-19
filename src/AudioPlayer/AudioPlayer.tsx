@@ -1,5 +1,5 @@
 import "./AudioPlayer.css";
-import React, { HTMLAttributes, ReactEventHandler, Suspense, useCallback, useEffect, useState } from "react";
+import React, { HTMLAttributes, ReactEventHandler, useCallback, useEffect, useState } from "react";
 import { AudioTranscript } from "./AudioTranscript";
 import { createLiveTranscript, createLiveTranscriptResult } from "../AudioTranscript/LiveTranstruct";
 import { toHHMMSS } from "./format-time";
