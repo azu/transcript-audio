@@ -1,5 +1,5 @@
 import "./AudioPlayer.css";
-import React, { HTMLAttributes, ReactEventHandler, useCallback, useEffect, useState } from "react";
+import React, { HTMLAttributes, ReactEventHandler, useCallback, useEffect, useMemo, useState } from "react";
 import { AudioTranscript } from "./AudioTranscript";
 import { createLiveTranscript, createLiveTranscriptResult } from "../AudioTranscript/LiveTranstruct";
 import { toHHMMSS } from "./format-time";
@@ -164,6 +164,33 @@ const useAudio = () => {
 };
 
 const virtualAudioDeviceNames = ["BlackHole"];
+const dndBaseStyle = {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "20px",
+    borderWidth: 2,
+    borderRadius: 2,
+    borderColor: "#eeeeee",
+    borderStyle: "dashed",
+    backgroundColor: "#fafafa",
+    color: "#bdbdbd",
+    outline: "none",
+    transition: "border .24s ease-in-out"
+} as const;
+
+const activeStyle = {
+    borderColor: "#2196f3"
+};
+
+const acceptStyle = {
+    borderColor: "#00e676"
+};
+
+const rejectStyle = {
+    borderColor: "#ff1744"
+};
 
 export function AudioPlayer() {
     const [audioElement, audioRef] = useAudio();
@@ -276,7 +303,16 @@ export function AudioPlayer() {
         },
         [audioElement]
     );
-    const { getRootProps, getInputProps } = useDropzone({ onDrop });
+    const { isDragActive, isDragAccept, isDragReject, getRootProps, getInputProps } = useDropzone({ onDrop });
+    const style = useMemo(
+        () => ({
+            ...dndBaseStyle,
+            ...(isDragActive ? activeStyle : {}),
+            ...(isDragAccept ? acceptStyle : {}),
+            ...(isDragReject ? rejectStyle : {})
+        }),
+        [isDragActive, isDragReject, isDragAccept]
+    );
     return (
         <div
             className={"AudioPlayer"}
@@ -284,10 +320,10 @@ export function AudioPlayer() {
                 width: "100%"
             }}
         >
-            <section className="container">
-                <div {...getRootProps({ className: "dropzone" })}>
+            <section className="AudioPlayer-Container">
+                <div {...getRootProps({ style })}>
                     <input {...getInputProps()} />
-                    <p>Drag and Drop audio(mp3) files here, or click to select files</p>
+                    <span>Drag and Drop audio(mp3) files here, or click to select files</span>
                 </div>
             </section>
             <div
