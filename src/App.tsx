@@ -9,8 +9,7 @@ function App() {
                 <h1>🔈📝 Transcript Audio</h1>
                 <details>
                     <summary>
-                        Usage: ⚠️ Need <a href="https://github.com/ExistentialAudio/BlackHole">BlackHole</a> before
-                        playing
+                        Usage: ⚠️ Need <a href="https://github.com/ExistentialAudio/BlackHole">BlackHole</a> and Chrome
                     </summary>
                     <h2>First</h2>
                     <ul>
