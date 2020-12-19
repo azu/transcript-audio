@@ -297,7 +297,7 @@ export function AudioPlayer() {
             >
                 <audio
                     className={"Audio"}
-                    src={"debug.m4a"}
+                    src={process.env.NODE_ENV === "development" ? "debug.m4a" : "example.mp3"}
                     autoPlay={playing}
                     controls={true}
                     onPlay={onPlay}
