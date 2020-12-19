@@ -200,19 +200,19 @@ export function AudioPlayer() {
     const addLog = useCallback(
         (result: createLiveTranscriptResult) => {
             console.log("addLog", result);
-            setSpeechingLogs(speechingLogs.concat(result));
+            setSpeechingLogs([...speechingLogs, result]);
         },
         [speechingLogs]
     );
     useEffect(() => {
         let recognition: SpeechRecognition;
         let state: "play" | "pause" = "pause";
+        const liveTranscript = createLiveTranscript(audioElement?.currentTime ?? 0);
         const startRecognition = () => {
             if (state === "play") {
                 return;
             }
             state = "play";
-            const liveTranscript = createLiveTranscript();
             const SpeechRecognition =
                 window.SpeechRecognition || ((window as any).webkitSpeechRecognition as SpeechRecognition);
             if (!SpeechRecognition) {
@@ -252,6 +252,8 @@ export function AudioPlayer() {
                 setSpeechingText(<>{processingText}</>);
                 if (finalResult) {
                     addLog(liveTranscriptResult);
+                    liveTranscript.clear();
+                    liveTranscript.setStartTime(currentTime + 1);
                 }
             };
             recognition.onend = function (_event) {

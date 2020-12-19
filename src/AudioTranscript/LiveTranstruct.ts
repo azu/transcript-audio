@@ -16,9 +16,9 @@ export type createLiveTranscriptResult = {
     text: string;
     items: createLiveTranscriptResultItem[];
 };
-export const createLiveTranscript = () => {
-    const rawTranscripts: LiveTranscript[] = [];
-    const internalTranscripts: IRTranscript[] = [];
+export const createLiveTranscript = (startTime: number = 0) => {
+    let rawTranscripts: LiveTranscript[] = [];
+    let internalTranscripts: IRTranscript[] = [];
     return {
         valid(transcript: LiveTranscript) {
             const lastTranscript = rawTranscripts[rawTranscripts.length - 1];
@@ -49,7 +49,7 @@ export const createLiveTranscript = () => {
                 internalTranscripts.push({
                     startIndex: 0,
                     endIndex: transcript.text.length,
-                    startTime: 0,
+                    startTime: startTime,
                     endTime: transcript.currentTime
                 });
             }
@@ -71,6 +71,13 @@ export const createLiveTranscript = () => {
                     };
                 })
             };
+        },
+        clear() {
+            rawTranscripts = [];
+            internalTranscripts = [];
+        },
+        setStartTime(newStartTime: number) {
+            startTime = newStartTime;
         }
     };
 };
