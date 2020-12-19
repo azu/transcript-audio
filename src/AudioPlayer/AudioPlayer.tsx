@@ -218,6 +218,10 @@ export function AudioPlayer() {
             if (!SpeechRecognition) {
                 return alert("Require SpeechRecognition API. Please use Chrome-like browser.");
             }
+            // prevent duplicated
+            if (recognition) {
+                recognition.abort();
+            }
             recognition = new SpeechRecognition();
             recognition.interimResults = true;
             recognition.continuous = true;
