@@ -13,7 +13,7 @@ Transcript your audio file like Podcast using [SpeechRecognition](https://develo
 
 1. Install [BlackHole](https://github.com/ExistentialAudio/BlackHole) into your PC
     - [BlackHole](https://github.com/ExistentialAudio/BlackHole) is virtual loopback audio device
-2. Visit <>
+2. Visit <https://transcript-audio.netlify.app/>
 3. Drag and Drop your audio file you want to transcript to following
 4. Play audio and want for transcription.
 
