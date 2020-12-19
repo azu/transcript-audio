@@ -215,6 +215,9 @@ export function AudioPlayer() {
             const liveTranscript = createLiveTranscript();
             const SpeechRecognition =
                 window.SpeechRecognition || ((window as any).webkitSpeechRecognition as SpeechRecognition);
+            if (!SpeechRecognition) {
+                return alert("Require SpeechRecognition API. Please use Chrome-like browser.");
+            }
             recognition = new SpeechRecognition();
             recognition.interimResults = true;
             recognition.continuous = true;
