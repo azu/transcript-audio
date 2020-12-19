@@ -28,3 +28,10 @@ Transcript your audio file like Podcast using [SpeechRecognition](https://develo
 ## License
 
 MIT
+
+## Supporter
+
+<a href="https://www.netlify.com">
+  <img src="https://www.netlify.com/img/global/badges/netlify-light.svg"/>
+</a>
+
