@@ -47,7 +47,9 @@ ${log.text}`}</span>
                 width: "100%"
             }}
         >
+            <h3>Transcript 🔉</h3>
             <p>{props.speechingText}</p>
+            <h3>Logs 📝</h3>
             <pre
                 style={{
                     whiteSpace: "pre-wrap"
