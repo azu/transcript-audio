@@ -1,7 +1,9 @@
-import React, { ReactEventHandler, Suspense, useCallback, useEffect, useState } from "react";
-
+import "./AudioPlayer.css";
+import React, { HTMLAttributes, ReactEventHandler, Suspense, useCallback, useEffect, useState } from "react";
 import { AudioTranscript } from "./AudioTranscript";
-import { createLiveTranscript } from "../AudioTranscript/LiveTranstruct";
+import { createLiveTranscript, createLiveTranscriptResult } from "../AudioTranscript/LiveTranstruct";
+import { toHHMMSS } from "./format-time";
+import { useDropzone } from "react-dropzone";
 
 (window as any).kuromojin = {
     dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict"
@@ -48,7 +50,9 @@ function useOutputAudioDevices() {
     return [audioDevices];
 }
 
-function SelectAudioDevice(props: { audioElement?: HTMLAudioElement; defaultDeviceNames: string[] }) {
+function SelectAudioDevice(
+    props: { audioElement?: HTMLAudioElement; defaultDeviceNames: string[] } & HTMLAttributes<HTMLDivElement>
+) {
     const [inputAudioDevices] = useInputAudioDevices();
     const [outputAudioDevices] = useOutputAudioDevices();
     const [inputAudioDeviceId, setInputAudioDeviceId] = useState<string | undefined>(undefined);
@@ -114,10 +118,18 @@ function SelectAudioDevice(props: { audioElement?: HTMLAudioElement; defaultDevi
             setOutputAudioDeviceId(outputAudioDevice.deviceId);
         }
     }, [inputAudioDevices, outputAudioDevices, props.defaultDeviceNames]);
-    const InputAudioDevices = () => {
-        return (
-            <span>
-                Input
+
+    return (
+        <div
+            className={props.className}
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                textAlign: "right"
+            }}
+        >
+            <label>
+                Input:
                 <select value={inputAudioDeviceId} onChange={onChangeInput}>
                     {inputAudioDevices.map((device) => {
                         return (
@@ -127,13 +139,9 @@ function SelectAudioDevice(props: { audioElement?: HTMLAudioElement; defaultDevi
                         );
                     })}
                 </select>
-            </span>
-        );
-    };
-    const OutputAudioDevices = () => {
-        return (
-            <span>
-                Output
+            </label>
+            <label>
+                Output:
                 <select value={outputAudioDeviceId} onChange={onChangeOutput}>
                     {outputAudioDevices.map((device) => {
                         return (
@@ -143,38 +151,10 @@ function SelectAudioDevice(props: { audioElement?: HTMLAudioElement; defaultDevi
                         );
                     })}
                 </select>
-            </span>
-        );
-    };
-
-    return (
-        <Suspense fallback={<p>Loading...</p>}>
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column"
-                }}
-            >
-                <InputAudioDevices />
-                <OutputAudioDevices />
-            </div>
-        </Suspense>
+            </label>
+        </div>
     );
 }
-
-const toHHMMSS = (totalSeconds?: number): string => {
-    if (!totalSeconds) {
-        return "<Unknown>:<Unknown>";
-    }
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor(totalSeconds / 60) % 60;
-    const seconds = Math.floor(totalSeconds % 60);
-
-    return [hours, minutes, seconds]
-        .map((v) => (v < 10 ? "0" + v : v))
-        .filter((v, i) => v !== "00" || i > 0)
-        .join(":");
-};
 
 const useAudio = () => {
     const [audioElement, setAudioElement] = useState<HTMLAudioElement>();
@@ -186,20 +166,17 @@ const useAudio = () => {
     return [audioElement, audioRef] as const;
 };
 
-function selectColor(number: number): string {
-    const hue = number * 137.508; // use golden angle approximation
-    return `hsl(${hue},50%,75%)`;
-}
+const virtualAudioDeviceNames = ["BlackHole"];
 
 export function AudioPlayer() {
     const [audioElement, audioRef] = useAudio();
     const [playing, setPlaying] = useState<boolean>(false);
     const [speechingText, setSpeechingText] = useState<JSX.Element>(<></>);
-    const [speechingLogs, setSpeechingLogs] = useState<string[]>([]);
-    const virtualAudioDeviceNames = ["BlackHole"];
+    const [speechingLogs, setSpeechingLogs] = useState<createLiveTranscriptResult[]>([]);
     const addLog = useCallback(
-        (log: string) => {
-            setSpeechingLogs(speechingLogs.concat(log));
+        (result: createLiveTranscriptResult) => {
+            console.log("addLog", result);
+            setSpeechingLogs(speechingLogs.concat(result));
         },
         [speechingLogs]
     );
@@ -240,16 +217,14 @@ export function AudioPlayer() {
                 console.groupCollapsed(formattedTime);
                 console.log(liveTranscriptResult);
                 console.groupEnd();
-                const processingText = liveTranscriptResult.items.map((t, index) => {
-                    return (
-                        <span key={t.startIndex + t.endIndex} style={{ backgroundColor: selectColor(index) }}>
-                            {t.text}
-                        </span>
-                    );
-                });
+                const processingText = liveTranscriptResult.items
+                    .map((t, index) => {
+                        return t.text;
+                    })
+                    .join("");
                 setSpeechingText(<>{processingText}</>);
                 if (finalResult) {
-                    addLog(`${formattedTime}${liveTranscriptResult.text}`);
+                    addLog(liveTranscriptResult);
                 }
             };
             recognition.onend = function (_event) {
@@ -285,6 +260,26 @@ export function AudioPlayer() {
     const onStop = () => {
         setPlaying(false);
     };
+    const onClickLog = (log: createLiveTranscriptResult) => {
+        if (audioElement?.currentTime) {
+            audioElement.currentTime = log.items[0].startTime;
+        }
+    };
+
+    const onDrop = useCallback(
+        (acceptedFiles) => {
+            const file = acceptedFiles[0];
+            const src = URL.createObjectURL(file);
+            if (!audioElement) {
+                return;
+            }
+            audioElement.src = src;
+            setSpeechingLogs([]);
+            setSpeechingText(<></>);
+        },
+        [audioElement]
+    );
+    const { getRootProps, getInputProps } = useDropzone({ onDrop });
     return (
         <div
             className={"AudioPlayer"}
@@ -292,12 +287,19 @@ export function AudioPlayer() {
                 width: "100%"
             }}
         >
+            <section className="container">
+                <div {...getRootProps({ className: "dropzone" })}>
+                    <input {...getInputProps()} />
+                    <p>Drag and Drop audio(mp3) files here, or click to select files</p>
+                </div>
+            </section>
             <div
                 style={{
                     display: "flex"
                 }}
             >
                 <audio
+                    className={"Audio"}
                     src={"debug.m4a"}
                     autoPlay={playing}
                     controls={true}
@@ -305,10 +307,14 @@ export function AudioPlayer() {
                     onPause={onStop}
                     ref={audioRef}
                 />
-                <SelectAudioDevice audioElement={audioElement} defaultDeviceNames={virtualAudioDeviceNames} />
+                <SelectAudioDevice
+                    className={"SelectAudioDevice"}
+                    audioElement={audioElement}
+                    defaultDeviceNames={virtualAudioDeviceNames}
+                />
             </div>
             {/*<AudioWave audioElement={audioElement} />*/}
-            <AudioTranscript speechingText={speechingText} logs={speechingLogs} />
+            <AudioTranscript onClickLog={onClickLog} speechingText={speechingText} logs={speechingLogs} />
         </div>
     );
 }
