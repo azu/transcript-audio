@@ -1,8 +1,11 @@
-export function InputAudio() {
+export interface InputAudioProps {
+    preferAudioDeviceNames?: string[];
+}
+
+export function InputAudio(props: InputAudioProps) {
     const click = () => {
         (async () => {
             const devices = await navigator.mediaDevices.enumerateDevices().then(function (devices) {
-                // 成功時
                 return devices.filter((device) => device.kind === "audioinput");
             });
             console.log("Input devices", devices);
@@ -12,7 +15,7 @@ export function InputAudio() {
                 return;
             }
             const inputDevideId = device.deviceId;
-            console.log("inputDevideId", inputDevideId);
+            console.log("inputDeviceId", inputDevideId);
             const constraints = {
                 audio: {
                     deviceId: inputDevideId

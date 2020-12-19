@@ -1,29 +1,166 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { AudioTranscript } from "./AudioTranscript";
-import { AudioWave } from "./AudioWave";
+import React, { ReactElement, ReactEventHandler, Suspense, useCallback, useEffect, useState } from "react";
 
-const setBlackholeInput = async () => {
-    const devices = await navigator.mediaDevices.enumerateDevices().then(function (devices) {
-        return devices.filter((device) => device.kind === "audioinput");
-    });
-    console.log("Input devices", devices);
-    const device = devices[2];
-    if (!device) {
-        console.log("No device");
-        return;
-    }
-    const inputDevideId = device.deviceId;
-    console.log("inputDevideId", inputDevideId);
+import { AudioTranscript } from "./AudioTranscript";
+import { tokenize } from "kuromojin";
+
+(window as any).kuromojin = {
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict"
+};
+const setLoopbackAudioDevice = async (device: MediaDeviceInfo) => {
+    const loopbackAudioDeviceId = device.deviceId;
     const constraints = {
         audio: {
-            deviceId: inputDevideId
+            deviceId: loopbackAudioDeviceId
         }
     };
     await navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-        // 成功した時の処理
-        console.log("SUCCC", stream);
+        console.log("Set Loopback Audio", stream);
     });
 };
+
+function useInputAudioDevices() {
+    const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+    useEffect(() => {
+        navigator.mediaDevices
+            .enumerateDevices()
+            .then(function (devices) {
+                return devices.filter((device) => device.kind === "audioinput");
+            })
+            .then((devices) => {
+                setAudioDevices(devices);
+            });
+    }, []);
+    return [audioDevices];
+}
+
+function useOutputAudioDevices() {
+    const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+    useEffect(() => {
+        navigator.mediaDevices
+            .enumerateDevices()
+            .then(function (devices) {
+                return devices.filter((device) => device.kind === "audiooutput");
+            })
+            .then((devices) => {
+                setAudioDevices(devices);
+            });
+    }, []);
+    return [audioDevices];
+}
+
+function SelectAudioDevice(props: { audioElement?: HTMLAudioElement; defaultDeviceNames: string[] }) {
+    const [inputAudioDevices] = useInputAudioDevices();
+    const [outputAudioDevices] = useOutputAudioDevices();
+    const [inputAudioDeviceId, setInputAudioDeviceId] = useState<string | undefined>(undefined);
+    const [outputAudioDeviceId, setOutputAudioDeviceId] = useState<string | undefined>(undefined);
+    const onChangeInput: ReactEventHandler<HTMLSelectElement> = useCallback(
+        (event) => {
+            const deviceId = event.currentTarget.value;
+            const selectedDevice = inputAudioDevices.find((device) => device.deviceId === deviceId);
+            if (selectedDevice) {
+                setInputAudioDeviceId(deviceId);
+            }
+        },
+        [inputAudioDevices]
+    );
+    const onChangeOutput: ReactEventHandler<HTMLSelectElement> = useCallback(
+        (event) => {
+            const deviceId = event.currentTarget.value;
+            const selectedDevice = outputAudioDevices.find((device) => device.deviceId === deviceId);
+            if (selectedDevice) {
+                setOutputAudioDeviceId(deviceId);
+            }
+        },
+        [outputAudioDevices]
+    );
+    useEffect(() => {
+        (async () => {
+            const matchInputAudioDevice = inputAudioDevices.find((device) => {
+                return device.deviceId === inputAudioDeviceId;
+            });
+            if (!matchInputAudioDevice) {
+                return;
+            }
+            setLoopbackAudioDevice(matchInputAudioDevice).catch((error) => {
+                console.error(error);
+            });
+        })();
+    }, [inputAudioDeviceId, inputAudioDevices]);
+    useEffect(() => {
+        (async () => {
+            const audio = props.audioElement;
+            if (!audio || !outputAudioDeviceId) {
+                return;
+            }
+            console.log("set outputAudioDevice", outputAudioDeviceId);
+            await (audio as any).setSinkId(outputAudioDeviceId);
+        })();
+    }, [outputAudioDeviceId, props.audioElement]);
+    // Default
+    useEffect(() => {
+        const matchAudioDeviceInfo = (audioDevices: MediaDeviceInfo[]) => {
+            return audioDevices.find((device) => {
+                return props.defaultDeviceNames.some((name) => {
+                    return device.label.toLowerCase().includes(name.toLowerCase());
+                });
+            });
+        };
+        const inputAudioDevice = matchAudioDeviceInfo(inputAudioDevices);
+        const outputAudioDevice = matchAudioDeviceInfo(outputAudioDevices);
+        if (inputAudioDevice) {
+            setInputAudioDeviceId(inputAudioDevice.deviceId);
+        }
+        if (outputAudioDevice) {
+            setOutputAudioDeviceId(outputAudioDevice.deviceId);
+        }
+    }, [inputAudioDevices, outputAudioDevices, props.defaultDeviceNames]);
+    const InputAudioDevices = () => {
+        return (
+            <span>
+                Input
+                <select value={inputAudioDeviceId} onChange={onChangeInput}>
+                    {inputAudioDevices.map((device) => {
+                        return (
+                            <option key={device.deviceId} value={device.deviceId}>
+                                {device.label}
+                            </option>
+                        );
+                    })}
+                </select>
+            </span>
+        );
+    };
+    const OutputAudioDevices = () => {
+        return (
+            <span>
+                Output
+                <select value={outputAudioDeviceId} onChange={onChangeOutput}>
+                    {outputAudioDevices.map((device) => {
+                        return (
+                            <option key={device.deviceId} value={device.deviceId}>
+                                {device.label}
+                            </option>
+                        );
+                    })}
+                </select>
+            </span>
+        );
+    };
+
+    return (
+        <Suspense fallback={<p>Loading...</p>}>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column"
+                }}
+            >
+                <InputAudioDevices />
+                <OutputAudioDevices />
+            </div>
+        </Suspense>
+    );
+}
 
 const toHHMMSS = (totalSeconds?: number): string => {
     if (!totalSeconds) {
@@ -52,43 +189,15 @@ const useAudio = () => {
 export function AudioPlayer() {
     const [audioElement, audioRef] = useAudio();
     const [playing, setPlaying] = useState<boolean>(false);
-    const [speechingText, setSpeechingText] = useState("");
+    const [speechingText, setSpeechingText] = useState<JSX.Element>(<></>);
     const [speechingLogs, setSpeechingLogs] = useState<string[]>([]);
+    const virtualAudioDeviceNames = ["BlackHole"];
     const addLog = useCallback(
         (log: string) => {
             setSpeechingLogs(speechingLogs.concat(log));
         },
         [speechingLogs]
     );
-    useEffect(() => {
-        (async () => {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const audioDevices = devices.filter((device) => device.kind === "audiooutput");
-            const audio = audioElement;
-            if (!audio) {
-                return;
-            }
-            const outputAudioDevice = audioDevices[3];
-            console.log("outputAudioDevice", outputAudioDevice);
-            const outputDeviceId = outputAudioDevice.deviceId;
-            await (audio as any).setSinkId(outputDeviceId);
-        })();
-    }, [audioElement]);
-    useEffect(() => {
-        (async () => {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const audioDevices = devices.filter((device) => device.kind === "audiooutput");
-            const audio = audioElement;
-            console.log("audio", audio);
-            if (!audio) {
-                return;
-            }
-            const outputAudioDevice = audioDevices[3];
-            console.log("outputAudioDevice", outputAudioDevice);
-            const outputDeviceId = outputAudioDevice.deviceId;
-            await (audio as any).setSinkId(outputDeviceId);
-        })();
-    }, [audioElement]);
     useEffect(() => {
         let recognition: SpeechRecognition;
         let state: "play" | "pause" = "pause";
@@ -103,13 +212,38 @@ export function AudioPlayer() {
             recognition.interimResults = true;
             recognition.continuous = true;
             recognition.lang = "ja";
+            const logs: any[] = [];
+            (global as any)._logs = logs;
             recognition.onresult = function (event) {
                 const currentTime = audioElement?.currentTime;
-                console.log("current time", currentTime);
                 const speechRecognitionResults = Array.from(event.results);
-                console.log("speechRecognitionResults", speechRecognitionResults);
+                const text = speechRecognitionResults
+                    .map((r, i) => {
+                        const speechRecognitionAlternative = r.item(i);
+                        if (!speechRecognitionAlternative) {
+                            return "";
+                        }
+                        return speechRecognitionAlternative.transcript;
+                    })
+                    .join(" ");
                 const finalResult = speechRecognitionResults.find((result) => result.isFinal);
-                setSpeechingText(speechRecognitionResults.map((result) => result[0].transcript).join("↩\n"));
+
+                setSpeechingText(<>{text}</>);
+
+                logs.push({
+                    currentTime,
+                    text
+                });
+                // tokenize(text).then(tokens => {
+                //     function selectColor(number: number) {
+                //         const hue = number * 137.508; // use golden angle approximation
+                //         return `hsl(${hue},50%,75%)`;
+                //     }
+                // const el = tokens.map((token, index) => {
+                //     return <span key={token.surface_form + index}
+                //                  style={{ backgroundColor: selectColor(index) }}>{token.surface_form}</span>;
+                // });
+                // });
                 if (finalResult) {
                     addLog(`${toHHMMSS(currentTime)}${finalResult[0].transcript}`);
                 }
@@ -143,7 +277,6 @@ export function AudioPlayer() {
     }, [playing, audioElement, addLog]);
     const onPlay = () => {
         setPlaying(true);
-        setBlackholeInput().catch((error) => console.error(error));
     };
     const onStop = () => {
         setPlaying(false);
@@ -155,15 +288,22 @@ export function AudioPlayer() {
                 width: "100%"
             }}
         >
-            <audio
-                src={"debug.m4a"}
-                autoPlay={playing}
-                controls={true}
-                onPlay={onPlay}
-                onPause={onStop}
-                ref={audioRef}
-            />
-            <AudioWave audioElement={audioElement} />
+            <div
+                style={{
+                    display: "flex"
+                }}
+            >
+                <audio
+                    src={"debug.m4a"}
+                    autoPlay={playing}
+                    controls={true}
+                    onPlay={onPlay}
+                    onPause={onStop}
+                    ref={audioRef}
+                />
+                <SelectAudioDevice audioElement={audioElement} defaultDeviceNames={virtualAudioDeviceNames} />
+            </div>
+            {/*<AudioWave audioElement={audioElement} />*/}
             <AudioTranscript speechingText={speechingText} logs={speechingLogs} />
         </div>
     );

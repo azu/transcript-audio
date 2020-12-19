@@ -8,7 +8,8 @@
     "prepare": "git config --local core.hooksPath .githook",
     "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
     "start": "react-scripts start",
-    "test": "react-scripts test"
+    "test": "react-scripts test",
+    "updateSnapshot": "react-scripts test -u"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css}": [
@@ -52,7 +53,8 @@
     "react-scripts": "4.0.1",
     "typescript": "^4.0.3",
     "web-vitals": "^0.2.4",
-    "wfplayer": "^1.1.3"
+    "wfplayer": "^1.1.3",
+    "kuromojin": "^2.0.0"
   },
   "devDependencies": {
     "lint-staged": "^10.5.3",

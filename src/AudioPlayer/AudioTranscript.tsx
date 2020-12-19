@@ -1,4 +1,4 @@
-export function AudioTranscript(props: { speechingText: string; logs: string[] }) {
+export function AudioTranscript(props: { speechingText: JSX.Element; logs: string[] }) {
     return (
         <div
             className={"AudioTranscript"}
