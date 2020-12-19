@@ -1,7 +1,7 @@
-import React, { ReactElement, ReactEventHandler, Suspense, useCallback, useEffect, useState } from "react";
+import React, { ReactEventHandler, Suspense, useCallback, useEffect, useState } from "react";
 
 import { AudioTranscript } from "./AudioTranscript";
-import { tokenize } from "kuromojin";
+import { createLiveTranscript } from "../AudioTranscript/LiveTranstruct";
 
 (window as any).kuromojin = {
     dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict"
@@ -186,6 +186,11 @@ const useAudio = () => {
     return [audioElement, audioRef] as const;
 };
 
+function selectColor(number: number): string {
+    const hue = number * 137.508; // use golden angle approximation
+    return `hsl(${hue},50%,75%)`;
+}
+
 export function AudioPlayer() {
     const [audioElement, audioRef] = useAudio();
     const [playing, setPlaying] = useState<boolean>(false);
@@ -206,16 +211,15 @@ export function AudioPlayer() {
                 return;
             }
             state = "play";
+            const liveTranscript = createLiveTranscript();
             const SpeechRecognition =
                 window.SpeechRecognition || ((window as any).webkitSpeechRecognition as SpeechRecognition);
             recognition = new SpeechRecognition();
             recognition.interimResults = true;
             recognition.continuous = true;
             recognition.lang = "ja";
-            const logs: any[] = [];
-            (global as any)._logs = logs;
             recognition.onresult = function (event) {
-                const currentTime = audioElement?.currentTime;
+                const currentTime = audioElement?.currentTime ?? 0;
                 const speechRecognitionResults = Array.from(event.results);
                 const text = speechRecognitionResults
                     .map((r, i) => {
@@ -227,25 +231,21 @@ export function AudioPlayer() {
                     })
                     .join(" ");
                 const finalResult = speechRecognitionResults.find((result) => result.isFinal);
-
-                setSpeechingText(<>{text}</>);
-
-                logs.push({
-                    currentTime,
-                    text
+                liveTranscript.add({
+                    text,
+                    currentTime
                 });
-                // tokenize(text).then(tokens => {
-                //     function selectColor(number: number) {
-                //         const hue = number * 137.508; // use golden angle approximation
-                //         return `hsl(${hue},50%,75%)`;
-                //     }
-                // const el = tokens.map((token, index) => {
-                //     return <span key={token.surface_form + index}
-                //                  style={{ backgroundColor: selectColor(index) }}>{token.surface_form}</span>;
-                // });
-                // });
+                const liveTranscriptResult = liveTranscript.get();
+                const processingText = liveTranscriptResult.items.map((t, index) => {
+                    return (
+                        <span key={t.startIndex + t.endIndex} style={{ backgroundColor: selectColor(index) }}>
+                            {t.text}
+                        </span>
+                    );
+                });
+                setSpeechingText(<>{processingText}</>);
                 if (finalResult) {
-                    addLog(`${toHHMMSS(currentTime)}${finalResult[0].transcript}`);
+                    addLog(`${toHHMMSS(currentTime)}${liveTranscriptResult.text}`);
                 }
             };
             recognition.onend = function (_event) {
