@@ -25,11 +25,8 @@ export const createLiveTranscript = (startTime: number = 0) => {
             if (!lastTranscript) {
                 return true;
             }
-            // less text by previous
-            if (transcript.text.length <= lastTranscript.text.length) {
-                return false;
-            }
-            return true;
+            // if text length is lower than previous, it is invalid
+            return transcript.text.length > lastTranscript.text.length;
         },
         add(transcript: LiveTranscript) {
             if (!this.valid(transcript)) {

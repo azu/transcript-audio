@@ -199,10 +199,13 @@ export function AudioPlayer() {
     const [speechingLogs, setSpeechingLogs] = useState<createLiveTranscriptResult[]>([]);
     const addLog = useCallback(
         (result: createLiveTranscriptResult) => {
-            console.log("addLog", result);
-            setSpeechingLogs([...speechingLogs, result]);
+            console.groupCollapsed("AddLog");
+            console.log("speechingLogs", speechingLogs);
+            console.log("new Result", result);
+            console.groupEnd();
+            setSpeechingLogs((oldLogs) => [...oldLogs, result]);
         },
-        [speechingLogs]
+        [speechingLogs] // FIXME: it prevent ∞ loop on SpeechRecognition#onresult
     );
     useEffect(() => {
         let recognition: SpeechRecognition;
@@ -228,7 +231,7 @@ export function AudioPlayer() {
             recognition.lang = "ja";
             recognition.onresult = function (event) {
                 if (event.target !== recognition) {
-                    console.log("Work another reconition");
+                    console.log("Work another recognition");
                     return;
                 }
                 const currentTime = audioElement?.currentTime ?? 0;
@@ -251,6 +254,7 @@ export function AudioPlayer() {
                 const formattedTime = toHHMMSS(currentTime);
                 console.groupCollapsed(formattedTime);
                 console.log(liveTranscriptResult);
+                console.log(speechRecognitionResults);
                 console.groupEnd();
                 const processingText = liveTranscriptResult.items
                     .map((t, index) => {
@@ -259,6 +263,7 @@ export function AudioPlayer() {
                     .join("");
                 setSpeechingText(<>{processingText}</>);
                 if (finalResult) {
+                    console.log("-- Final Event --", event);
                     addLog(liveTranscriptResult);
                     liveTranscript.clear();
                     liveTranscript.setStartTime(currentTime + 1);
