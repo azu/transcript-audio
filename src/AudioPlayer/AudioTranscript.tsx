@@ -6,6 +6,7 @@ export type AudioTranscriptPropos = {
     onClickLog: (log: createLiveTranscriptResult) => void;
     speechingText: JSX.Element;
     logs: createLiveTranscriptResult[];
+    currentTime: number;
 };
 
 export function AudioTranscript(props: AudioTranscriptPropos) {
@@ -17,8 +18,20 @@ export function AudioTranscript(props: AudioTranscriptPropos) {
         props.onClickLog(props.logs?.[Number(index)]);
     };
     const output = props.logs.map((log, index) => {
+        const startTime = log.items[0].startTime;
+        const endTime = log.items[log.items.length - 1].endTime;
+        const isActiveLog = startTime <= props.currentTime && props.currentTime < endTime;
         return (
-            <p key={index}>
+            <p
+                key={index}
+                style={{
+                    ...(isActiveLog
+                        ? {
+                              backgroundColor: `var("--nc-ac-1")`
+                          }
+                        : {})
+                }}
+            >
                 <button
                     data-index={index}
                     onClick={onClick}
@@ -33,9 +46,7 @@ export function AudioTranscript(props: AudioTranscriptPropos) {
                 >
                     🔈
                 </button>
-                <span role={"button"} key={index}>{`${toHHMMSS(log.items[0].startTime)} --> ${toHHMMSS(
-                    log.items[log.items.length - 1].endTime
-                )}
+                <span role={"button"} key={index}>{`${toHHMMSS(startTime)} --> ${toHHMMSS(endTime)}
 ${log.text}`}</span>
             </p>
         );

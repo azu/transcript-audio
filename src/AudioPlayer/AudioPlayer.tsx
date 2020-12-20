@@ -221,10 +221,8 @@ export function AudioPlayer() {
             if (!SpeechRecognition) {
                 return alert("Require SpeechRecognition API. Please use Chrome-like browser.");
             }
-            // prevent duplicated
-            if (recognition) {
-                recognition.abort();
-            }
+            // memo: SpeechRecognition#abort call onresult with a isFinal
+            // We should not SpeechRecognition#abort when creating new instance.
             recognition = new SpeechRecognition();
             recognition.interimResults = true;
             recognition.continuous = true;
@@ -370,7 +368,12 @@ export function AudioPlayer() {
                 />
             </div>
             {/*<AudioWave audioElement={audioElement} />*/}
-            <AudioTranscript onClickLog={onClickLog} speechingText={speechingText} logs={speechingLogs} />
+            <AudioTranscript
+                onClickLog={onClickLog}
+                speechingText={speechingText}
+                logs={speechingLogs}
+                currentTime={audioElement?.currentTime ?? 0}
+            />
         </div>
     );
 }
