@@ -305,6 +305,7 @@ export function AudioPlayer() {
     const onClickLog = (log: createLiveTranscriptResult) => {
         if (audioElement?.currentTime) {
             audioElement.currentTime = log.items[0].startTime;
+            audioElement.play().catch((error) => console.error("play error", error));
         }
     };
 
@@ -346,7 +347,11 @@ export function AudioPlayer() {
             </section>
             <div
                 style={{
-                    display: "flex"
+                    display: "flex",
+                    position: "sticky",
+                    top: 0,
+                    background: "var(--nc-bg-1)",
+                    padding: "16px 0"
                 }}
             >
                 <audio
