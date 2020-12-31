@@ -44,6 +44,8 @@ It aims to create loop back device by setting input/output is same device.
 
 MIT
 
+example.mp3 use [AquesTalk](https://www.a-quest.com/)
+
 ## Supporter
 
 <a href="https://www.netlify.com">
